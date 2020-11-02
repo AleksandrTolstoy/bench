@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"regexp"
 	"strings"
 )
 
@@ -30,7 +29,7 @@ func main() {
 
 // вам надо написать более быструю оптимальную этой функции
 func FastSearch(out io.Writer) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // change it to filePath
 	if err != nil {
 		panic(err)
 	}
@@ -40,9 +39,7 @@ func FastSearch(out io.Writer) {
 		panic(err)
 	}
 
-	r := regexp.MustCompile("@")
-	seenBrowsers := []string{}
-	uniqueBrowsers := 0
+	seenBrowsers := make([]string, 0)
 	foundUsers := ""
 
 	lines := strings.Split(string(fileContents), "\n")
@@ -57,41 +54,32 @@ func FastSearch(out io.Writer) {
 		users = append(users, user)
 	}
 
-	for i, user := range users {
-
-		isAndroid := false
-		isMSIE := false
-		for _, browser := range user.Browsers {
-			if ok := strings.Contains(browser, "Android"); ok {
-				isAndroid = true
-				notSeenBefore := true
-				for _, item := range seenBrowsers {
-					if item == browser {
-						notSeenBefore = false
-					}
-				}
-				if notSeenBefore {
-					// log.Printf("SLOW New browser: %s, first seen: %s", browser, user["name"])
-					seenBrowsers = append(seenBrowsers, browser)
-					uniqueBrowsers++
-				}
+	isSeenBefore := func(browser string) bool {
+		for _, item := range seenBrowsers {
+			if item == browser {
+				return true
 			}
 		}
 
+		return false
+	}
+
+	for i, user := range users {
+		var isAndroid, isMSIE bool
+
 		for _, browser := range user.Browsers {
-			if ok := strings.Contains(browser, "MSIE"); ok {
+			AndroidOK := strings.Contains(browser, "Android")
+			if AndroidOK {
+				isAndroid = true
+			}
+
+			MSIEOK := strings.Contains(browser, "MSIE")
+			if MSIEOK {
 				isMSIE = true
-				notSeenBefore := true
-				for _, item := range seenBrowsers {
-					if item == browser {
-						notSeenBefore = false
-					}
-				}
-				if notSeenBefore {
-					// log.Printf("SLOW New browser: %s, first seen: %s", browser, user["name"])
-					seenBrowsers = append(seenBrowsers, browser)
-					uniqueBrowsers++
-				}
+			}
+
+			if (AndroidOK || MSIEOK) && !isSeenBefore(browser) {
+				seenBrowsers = append(seenBrowsers, browser)
 			}
 		}
 
@@ -99,8 +87,7 @@ func FastSearch(out io.Writer) {
 			continue
 		}
 
-		// log.Println("Android and MSIE user:", user["name"], user["email"])
-		email := r.ReplaceAllString(user.Email, " [at] ")
+		email := strings.ReplaceAll(user.Email, "@", " [at] ")
 		foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i, user.Name, email)
 	}
 
