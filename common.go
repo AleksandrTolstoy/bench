@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -34,7 +35,7 @@ func SlowSearch(out io.Writer) {
 	users := make([]map[string]interface{}, 0)
 	for _, line := range lines {
 		user := make(map[string]interface{})
-		// fmt.Printf("%v %v\n", err, line)
+		//fmt.Printf("%v %v\n", err, line)
 		err := json.Unmarshal([]byte(line), &user)
 		if err != nil {
 			panic(err)
@@ -49,14 +50,14 @@ func SlowSearch(out io.Writer) {
 
 		browsers, ok := user["browsers"].([]interface{})
 		if !ok {
-			// log.Println("cant cast browsers")
+			//log.Println("cant cast browsers")
 			continue
 		}
 
 		for _, browserRaw := range browsers {
 			browser, ok := browserRaw.(string)
 			if !ok {
-				// log.Println("cant cast browser to string")
+				log.Println("cant cast browser to string")
 				continue
 			}
 			if ok, err := regexp.MatchString("Android", browser); ok && err == nil {
