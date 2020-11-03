@@ -37,7 +37,11 @@ func FastSearch(out io.Writer) {
 		return false
 	}
 
-	var id int
+	var (
+		id   int
+		user = new(User)
+	)
+
 	fmt.Fprintln(out, "found users:")
 	for {
 		line, err := reader.ReadString('\n')
@@ -49,8 +53,7 @@ func FastSearch(out io.Writer) {
 			}
 		}
 
-		user := User{}
-		err = json.Unmarshal([]byte(line), &user)
+		err = json.Unmarshal([]byte(line), user)
 		if err != nil {
 			panic(err)
 		}
