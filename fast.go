@@ -1,29 +1,22 @@
 package main
 
 import (
+	"bench/data"
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 )
 
-type User struct {
-	Browsers []string
-	Company  string
-	Country  string
-	Email    string
-	Job      string
-	Name     string
-	Phone    string
-}
-
+// 1) easyjson -all data/user.go
+// 2) go test -bench . -benchmem
 func FastSearch(out io.Writer) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
 	reader := bufio.NewReader(file)
 	seenBrowsers := make([]string, 0)
@@ -39,7 +32,7 @@ func FastSearch(out io.Writer) {
 
 	var (
 		id   int
-		user = new(User)
+		user = new(data.User)
 	)
 
 	fmt.Fprintln(out, "found users:")
@@ -53,7 +46,7 @@ func FastSearch(out io.Writer) {
 			}
 		}
 
-		err = json.Unmarshal([]byte(line), user)
+		err = user.UnmarshalJSON([]byte(line))
 		if err != nil {
 			panic(err)
 		}
