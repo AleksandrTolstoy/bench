@@ -19,6 +19,7 @@ func SlowSearch(out io.Writer) {
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
 	fileContents, err := ioutil.ReadAll(file)
 	if err != nil {

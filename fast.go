@@ -1,11 +1,10 @@
 package main
 
 import (
-	"bytes"
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -20,40 +19,15 @@ type User struct {
 	Phone    string
 }
 
-func main() {
-	fastOut := new(bytes.Buffer)
-	FastSearch(fastOut)
-	fastResult := fastOut.String()
-	fmt.Println(fastResult)
-}
-
-// вам надо написать более быструю оптимальную этой функции
 func FastSearch(out io.Writer) {
-	file, err := os.Open(filePath) // change it to filePath
+	file, err := os.Open(filePath)
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
-	fileContents, err := ioutil.ReadAll(file)
-	if err != nil {
-		panic(err)
-	}
-
+	reader := bufio.NewReader(file)
 	seenBrowsers := make([]string, 0)
-	foundUsers := ""
-
-	lines := strings.Split(string(fileContents), "\n")
-
-	users := make([]*User, 0, len(lines))
-	for _, line := range lines {
-		user := new(User)
-		err := json.Unmarshal([]byte(line), &user)
-		if err != nil {
-			panic(err)
-		}
-		users = append(users, user)
-	}
-
 	isSeenBefore := func(browser string) bool {
 		for _, item := range seenBrowsers {
 			if item == browser {
@@ -64,7 +38,27 @@ func FastSearch(out io.Writer) {
 		return false
 	}
 
-	for i, user := range users {
+	var (
+		id         int
+		foundUsers string
+	)
+
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				panic(err)
+			}
+		}
+
+		user := User{}
+		err = json.Unmarshal([]byte(line), &user)
+		if err != nil {
+			panic(err)
+		}
+
 		var isAndroid, isMSIE bool
 
 		for _, browser := range user.Browsers {
@@ -83,12 +77,12 @@ func FastSearch(out io.Writer) {
 			}
 		}
 
-		if !(isAndroid && isMSIE) {
-			continue
+		if isAndroid && isMSIE {
+			email := strings.ReplaceAll(user.Email, "@", " [at] ")
+			foundUsers += fmt.Sprintf("[%d] %s <%s>\n", id, user.Name, email)
 		}
 
-		email := strings.ReplaceAll(user.Email, "@", " [at] ")
-		foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i, user.Name, email)
+		id++
 	}
 
 	fmt.Fprintln(out, "found users:\n"+foundUsers)
