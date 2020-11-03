@@ -24,7 +24,6 @@ func FastSearch(out io.Writer) {
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
 
 	reader := bufio.NewReader(file)
 	seenBrowsers := make([]string, 0)
@@ -38,11 +37,8 @@ func FastSearch(out io.Writer) {
 		return false
 	}
 
-	var (
-		id         int
-		foundUsers string
-	)
-
+	var id int
+	fmt.Fprintln(out, "found users:")
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -60,31 +56,30 @@ func FastSearch(out io.Writer) {
 		}
 
 		var isAndroid, isMSIE bool
-
 		for _, browser := range user.Browsers {
-			AndroidOK := strings.Contains(browser, "Android")
-			if AndroidOK {
+			okAndroid := strings.Contains(browser, "Android")
+			if okAndroid {
 				isAndroid = true
 			}
 
-			MSIEOK := strings.Contains(browser, "MSIE")
-			if MSIEOK {
+			okMSIE := strings.Contains(browser, "MSIE")
+			if okMSIE {
 				isMSIE = true
 			}
 
-			if (AndroidOK || MSIEOK) && !isSeenBefore(browser) {
+			if (okAndroid || okMSIE) && !isSeenBefore(browser) {
 				seenBrowsers = append(seenBrowsers, browser)
 			}
 		}
 
 		if isAndroid && isMSIE {
 			email := strings.ReplaceAll(user.Email, "@", " [at] ")
-			foundUsers += fmt.Sprintf("[%d] %s <%s>\n", id, user.Name, email)
+			foundUser := fmt.Sprintf("[%d] %s <%s>\n", id, user.Name, email)
+			fmt.Fprint(out, foundUser)
 		}
 
 		id++
 	}
 
-	fmt.Fprintln(out, "found users:\n"+foundUsers)
-	fmt.Fprintln(out, "Total unique browsers", len(seenBrowsers))
+	fmt.Fprintln(out, "\nTotal unique browsers", len(seenBrowsers))
 }
